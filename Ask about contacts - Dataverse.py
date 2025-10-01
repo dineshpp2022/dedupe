@@ -91,7 +91,7 @@ def query_gpt(user_query, df, chat_history):
                 "You are a helpful data assistant. "
                 "Answer only with clear explanations, insights, or summaries "
                 "based on the dataset provided. "
-                "Do NOT return Python/SQL/programming instructions. "
+                "Do NOT return Python/SQL/dot net programming instructions. "
                 "Plain text only."
             ),
         }
@@ -150,3 +150,4 @@ if st.session_state.df is not None:
         with st.expander("Conversation History"):
             for msg in st.session_state.chat_history:
                 st.markdown(f"**{msg['role']}**: {msg['content']}")
+
