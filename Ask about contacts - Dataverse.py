@@ -30,7 +30,7 @@ D365_COLORS = {
 }
 
 # Organization & Persona text
-ORG_NAME = os.getenv("ORG_NAME", "Squad Software Pvt Ltd")
+ORG_NAME = os.getenv("ORG_NAME", "Contoso Ltd")
 USER_DISPLAY_NAME = os.getenv("USER_DISPLAY_NAME", "You")
 USER_INITIALS = "".join([s[0] for s in USER_DISPLAY_NAME.split()][:2]).upper() or "U"
 
@@ -207,13 +207,11 @@ st.markdown(
 # =============================
 # Secrets / Configuration
 # =============================
-
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 TENANT_ID = os.getenv("TENANT_ID")
 CLIENT_ID = os.getenv("CLIENT_ID")
 CLIENT_SECRET = os.getenv("CLIENT_SECRET")
 RESOURCE = os.getenv("D365_RESOURCE", "https://squadd365.crm8.dynamics.com")
-
 
 CONTACTS_API = f"{RESOURCE}/api/data/v9.2/contacts?$select=fullname,emailaddress1,telephone1,address1_city"
 QUERYLOG_API = f"{RESOURCE}/api/data/v9.2/new_querylogs"
@@ -332,12 +330,14 @@ if "auto_log" not in st.session_state:
 # =============================
 # Sidebar (Left Pane): Title only, Permanently Pinned by CSS
 # =============================
-with st.sidebar:
-    st.markdown("## Dedupe assistant")
-    st.markdown(
-        '<div class="crm-card crm-subtle">Ask questions, find duplicates, and review contacts.</div>',
-        unsafe_allow_html=True
-    )
+
+#with st.sidebar:
+#   st.markdown("## Dedupe assistant")
+#    st.markdown(
+#        '<div class="crm-card crm-subtle">Ask questions, find duplicates, and review contacts.</div>',
+#        unsafe_allow_html=True
+#    )
+    
     # No environment details; no auto-log toggle
 
 # =============================
@@ -473,7 +473,7 @@ elif st.session_state.nav == "Assistant":
           <div class="crm-subtle">
             • "Summarize contacts by city"<br/>
             • "List contacts with missing emails"<br/>
-            • "show fuzzy duplicates"
+            • "Give me 5 sample contacts with name and email"
           </div>
         </div>
         """,
@@ -484,10 +484,10 @@ elif st.session_state.nav == "Assistant":
 elif st.session_state.nav == "Logs":
     if clear_clicked:
         st.session_state.chat_history = []
-        st.success("Cleared conversation history.")
+        st.success("Cleared local conversation history.")
 
     st.markdown("## Logs")
-    st.write("Recent conversation.")
+    st.write("Recent conversation (local). Entries may also be written to the D365 entity (server-side).")
 
     if st.session_state.chat_history:
         with st.expander("Conversation History", expanded=True):
