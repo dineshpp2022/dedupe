@@ -6,7 +6,7 @@ from openai import OpenAI
 # -----------------------------
 # OpenAI client
 # -----------------------------
-client = OpenAI(api_key="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")   # 🔐 move to env var
+client = OpenAI(api_key="")   # 🔐 move to env var
 
 # -----------------------------
 # D365 CRM Connection Details
@@ -151,3 +151,4 @@ if st.session_state.df is not None:
         with st.expander("Conversation History"):
             for msg in st.session_state.chat_history:
                 st.markdown(f"**{msg['role']}**: {msg['content']}")
+
