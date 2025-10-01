@@ -5,13 +5,13 @@ import os
 from openai import OpenAI
 
 # =============================
-# Page & App Styling (D365 look)
+# Page & App Config
 # =============================
 st.set_page_config(
     page_title="Dynamics 365 • Contact Assistant",
     page_icon="📇",
     layout="wide",
-    initial_sidebar_state="expanded",
+    initial_sidebar_state="expanded",  # keep sidebar open
 )
 
 # Fluent / D365 color tokens
@@ -25,19 +25,18 @@ D365_COLORS = {
     "danger": "#A80000",
     "black": "#000000",
     "white": "#FFFFFF",
-    "activeBg": "#F3F2F1",   # light grey for active button
-    "activeBorder": "#0078D4" # blue border for active button
+    "activeBg": "#F3F2F1",   # light grey for active nav button
+    "activeBorder": "#0078D4" # blue border for active nav button
 }
 
-# Organization & Persona
+# Organization & Persona text
 ORG_NAME = os.getenv("ORG_NAME", "Squad Software Pvt Ltd")
 USER_DISPLAY_NAME = os.getenv("USER_DISPLAY_NAME", "You")
 USER_INITIALS = "".join([s[0] for s in USER_DISPLAY_NAME.split()][:2]).upper() or "U"
 
-# -----------------------------
-# CSS — black strip & CRM-like UI; hide Deploy; custom nav button styles
-# + remove top white gap so content starts right under browser address bar
-# -----------------------------
+# =============================
+# Global CSS (Pinned Sidebar, Black Strip at Top, Nav Button Styles, Hide Deploy UI)
+# =============================
 st.markdown(
     f"""
     <style>
@@ -58,13 +57,14 @@ st.markdown(
         html, body, .stApp {{
             font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
             background: var(--neutralBg);
+            margin: 0 !important;   /* ensure no top gap */
+            padding: 0 !important;  /* ensure no top gap */
         }}
 
         /* Remove Streamlit header and top padding (kill white gap) */
         header[data-testid="stHeader"] {{
             display: none !important;
         }}
-        /* Remove any residual top padding/margin so strip hits the top */
         div[data-testid="stAppViewContainer"] {{
             padding-top: 0 !important;
             margin-top: 0 !important;
@@ -72,6 +72,37 @@ st.markdown(
         section.main > div.block-container, div.block-container {{
             padding-top: 0 !important;
             margin-top: 0 !important;
+        }}
+
+        /* ===== Pin sidebar permanently ===== */
+        section[data-testid="stSidebar"] {{
+            transform: none !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+            position: sticky !important;
+            left: 0 !important;
+            top: 0 !important;
+            height: 100vh !important;
+        }}
+        /* Prevent responsive collapse on narrow widths */
+        @media (max-width: 1024px) {{
+            section[data-testid="stSidebar"] {{
+                transform: none !important;
+                position: fixed !important;
+                z-index: 999 !important;
+            }}
+            div[data-testid="stAppViewContainer"] {{
+                margin-left: 18rem !important; /* adjust to your sidebar width if needed */
+            }}
+        }}
+
+        /* Hide any controls that open/close the sidebar */
+        [data-testid="collapsedControl"],
+        button[title="Open sidebar"],
+        button[title="Close sidebar"],
+        button[aria-label*="sidebar"],
+        [data-testid="stSidebarNav"] button {{
+            display: none !important;
         }}
 
         /* Black strip on top */
@@ -109,7 +140,7 @@ st.markdown(
             margin: 12px 0;
         }}
 
-        /* Sidebar tweaks */
+        /* Sidebar visual */
         section[data-testid="stSidebar"] > div {{
             background: white !important;
             border-right: 1px solid var(--border);
@@ -176,11 +207,13 @@ st.markdown(
 # =============================
 # Secrets / Configuration
 # =============================
+
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 TENANT_ID = os.getenv("TENANT_ID")
 CLIENT_ID = os.getenv("CLIENT_ID")
 CLIENT_SECRET = os.getenv("CLIENT_SECRET")
 RESOURCE = os.getenv("D365_RESOURCE", "https://squadd365.crm8.dynamics.com")
+
 
 CONTACTS_API = f"{RESOURCE}/api/data/v9.2/contacts?$select=fullname,emailaddress1,telephone1,address1_city"
 QUERYLOG_API = f"{RESOURCE}/api/data/v9.2/new_querylogs"
@@ -297,7 +330,7 @@ if "auto_log" not in st.session_state:
     st.session_state.auto_log = True
 
 # =============================
-# Sidebar (Left Pane): Title only
+# Sidebar (Left Pane): Title only, Permanently Pinned by CSS
 # =============================
 with st.sidebar:
     st.markdown("## Dedupe assistant")
@@ -308,7 +341,7 @@ with st.sidebar:
     # No environment details; no auto-log toggle
 
 # =============================
-# Top Command Row (Push Buttons + Actions)
+# Top Command Row (Push Buttons + Contextual Action)
 # =============================
 st.markdown('<div class="crm-command">', unsafe_allow_html=True)
 nav_cols = st.columns([1, 1, 1, 4], vertical_alignment="center")
@@ -331,7 +364,7 @@ with nav_cols[1]:
 with nav_cols[2]:
     click_logs = nav_button("Logs", "Logs", "nav_logs_btn")
 
-# Handle navigation clicks OUTSIDE callbacks (so rerun works)
+# Handle navigation clicks OUTSIDE callbacks so rerun applies and styles update instantly
 nav_changed = False
 if click_contacts and st.session_state.nav != "Contacts":
     st.session_state.nav = "Contacts"
@@ -366,6 +399,7 @@ st.markdown('</div>', unsafe_allow_html=True)
 
 # --- Contacts View ---
 if st.session_state.nav == "Contacts":
+    # Fetch handler
     if fetch_clicked:
         with st.spinner("Fetching contacts from D365..."):
             try:
@@ -431,7 +465,7 @@ elif st.session_state.nav == "Assistant":
                 except Exception as e:
                     st.error(f"❌ Failed to log to D365: {str(e)}")
 
-    # Helpful hints
+    # Hints
     st.markdown(
         """
         <div class="crm-card">
@@ -439,7 +473,7 @@ elif st.session_state.nav == "Assistant":
           <div class="crm-subtle">
             • "Summarize contacts by city"<br/>
             • "List contacts with missing emails"<br/>
-            • "Show Fuzzy duplicate contacts"
+            • "show fuzzy duplicates"
           </div>
         </div>
         """,
@@ -450,10 +484,10 @@ elif st.session_state.nav == "Assistant":
 elif st.session_state.nav == "Logs":
     if clear_clicked:
         st.session_state.chat_history = []
-        st.success("Cleared local conversation history.")
+        st.success("Cleared conversation history.")
 
     st.markdown("## Logs")
-    st.write("Recent conversation (local). Entries may also be written to the D365 entity (server-side).")
+    st.write("Recent conversation.")
 
     if st.session_state.chat_history:
         with st.expander("Conversation History", expanded=True):
