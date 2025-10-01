@@ -1,23 +1,25 @@
 import streamlit as st
 import pandas as pd
 import requests
+import os
 from openai import OpenAI
+
+# -----------------------------
+# Load secrets from environment variables
+# -----------------------------
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+TENANT_ID = os.getenv("TENANT_ID")
+CLIENT_ID = os.getenv("CLIENT_ID")
+CLIENT_SECRET = os.getenv("CLIENT_SECRET")
+RESOURCE = os.getenv("D365_RESOURCE", "https://squadd365.crm8.dynamics.com")  # default if not set
 
 # -----------------------------
 # OpenAI client
 # -----------------------------
-client = OpenAI(api_key="")   # 🔐 move to env var
-
-# -----------------------------
-# D365 CRM Connection Details
-# -----------------------------
-TENANT_ID = "2ff69b68-5b88-40e0-b5c5-77c58321740d"
-CLIENT_ID = "87bfd509-4748-46a9-8fd2-873e422afbce"
-CLIENT_SECRET = "JC28Q~vQy8XknuUfwUBOe2yNK.5JImrpTppNebZo"  # 🔐 move to env var
-RESOURCE = "https://squadd365.crm8.dynamics.com"
+client = OpenAI(api_key=OPENAI_API_KEY)
 
 CONTACTS_API = f"{RESOURCE}/api/data/v9.2/contacts?$select=fullname,emailaddress1,telephone1,address1_city"
-QUERYLOG_API = f"{RESOURCE}/api/data/v9.2/new_querylogs"   # <-- custom table in D365
+QUERYLOG_API = f"{RESOURCE}/api/data/v9.2/new_querylogs"
 
 # -----------------------------
 # Get Access Token
@@ -69,7 +71,7 @@ def create_query_log_in_d365(user_query, gpt_result):
         "OData-Version": "4.0"
     }
     payload = {
-        "new_userquery": user_query[:100],   # required name field (shortened if long)
+        "new_userquery": user_query[:100],
         "new_userquery2": user_query,
         "new_gptresult": gpt_result
     }
@@ -119,7 +121,6 @@ if "df" not in st.session_state:
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
 
-# Button: fetch contacts
 if st.button("Fetch Contacts from D365 CRM"):
     try:
         df = fetch_contacts_from_d365()
@@ -129,7 +130,6 @@ if st.button("Fetch Contacts from D365 CRM"):
     except Exception as e:
         st.error(f"❌ Error fetching contacts: {str(e)}")
 
-# Query GPT
 if st.session_state.df is not None:
     user_query = st.text_input("Ask a question about the dataset:")
 
@@ -144,11 +144,9 @@ if st.session_state.df is not None:
         except Exception as e:
             st.error(f"❌ Failed to log query: {str(e)}")
 
-        # update chat history
         st.session_state.chat_history.append({"role": "user", "content": user_query})
         st.session_state.chat_history.append({"role": "assistant", "content": result})
 
         with st.expander("Conversation History"):
             for msg in st.session_state.chat_history:
                 st.markdown(f"**{msg['role']}**: {msg['content']}")
-
