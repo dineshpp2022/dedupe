@@ -307,7 +307,7 @@ def query_gpt(user_query, df, chat_history):
         response = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=messages,
-            max_tokens=800,
+            max_tokens=16000,
             temperature=0.2,
         )
         return response.choices[0].message.content.strip()
@@ -496,3 +496,4 @@ elif st.session_state.nav == "Logs":
                 st.markdown(f"**{role}:** {msg['content']}")
     else:
         st.info("No conversations yet. Go to **Assistant** and ask a question.")
+
